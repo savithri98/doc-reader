@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { extractTextFromDocx, extractTextFromPdf } from '@/app/utils/extract';
-import { translateAndFormatWithAI } from '@/app/utils/ai';
+import { translateAndFormatPdfBuffer, processDocxBuffer } from '@/app/utils/ai';
 import { generatePdfBuffer } from '@/app/utils/pdf';
 
 export async function POST(request) {
@@ -14,24 +13,23 @@ export async function POST(request) {
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
-        let extractedText = '';
+        if (buffer.length > 5 * 1024 * 1024) {
+            return NextResponse.json({ error: 'File is too large (over 5MB). Please upload a smaller document.' }, { status: 400 });
+        }
+
+        let formattedMarkdownText = '';
 
         if (name.toLowerCase().endsWith('.pdf') || type === 'application/pdf') {
-            extractedText = await extractTextFromPdf(buffer);
+            formattedMarkdownText = await translateAndFormatPdfBuffer(buffer);
         } else if (name.toLowerCase().endsWith('.docx') || type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-            extractedText = await extractTextFromDocx(buffer);
+            formattedMarkdownText = await processDocxBuffer(buffer);
         } else {
             return NextResponse.json({ error: 'Unsupported file format. Please upload PDF or DOCX.' }, { status: 400 });
         }
 
-        if (!extractedText || extractedText.trim() === '') return NextResponse.json({ error: 'Could not extract text from the file.' }, { status: 400 });
-
-        if (extractedText.length > 50000) return NextResponse.json({ error: 'File is too large to translate in free tier.' }, { status: 400 });
-
-        // ─── Native AI Translation & Semantic Formatting Step ──────────
-        // This leverages Gemini 1.5 Pro to intelligently translate the entire text
-        // while simultaneously rebuilding perfect markdown layout.
-        const formattedMarkdownText = await translateAndFormatWithAI(extractedText);
+        if (!formattedMarkdownText || formattedMarkdownText.trim() === '') {
+            return NextResponse.json({ error: 'Translation and formatting failed or generated empty text.' }, { status: 500 });
+        }
 
         const pdfBuffer = await generatePdfBuffer(formattedMarkdownText);
 
