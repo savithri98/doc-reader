@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import { translateAndFormatPdfBuffer, processDocxBuffer } from '@/app/utils/ai';
 import { generatePdfBuffer } from '@/app/utils/pdf';
 
+// Allow up to 5 minutes for large Gemini processing jobs
+export const maxDuration = 300;
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function POST(request) {
     try {
         const formData = await request.formData();
