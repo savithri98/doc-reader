@@ -24,7 +24,10 @@ function detectLineType(line, nextLine = '') {
     // Title-case short standalone lines followed by paragraph = subheading
     if (isShort && (nextLine.trim().length > 60 || nextLine.trim().length === 0)) {
         const wordCount = trimmed.split(/\s+/).length;
-        if (wordCount <= 8) return 'subheading';
+        // Strict criteria for subheadings: max 6 words, no ending prose punctuation
+        if (wordCount <= 6 && !/[.,;!?]$/.test(trimmed)) {
+            return 'subheading';
+        }
     }
 
     return 'paragraph';

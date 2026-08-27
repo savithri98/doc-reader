@@ -100,7 +100,23 @@ export async function extractTextFromPdf(buffer) {
             return true;
         }).join('\n');
 
-        return cleanedText.trim();
+        // Heal OCR line breaks: merge lines that don't end in punctuation
+        const lines = cleanedText.split('\n');
+        let healedText = '';
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) { healedText += '\n\n'; continue; }
+
+            // If the line ends with a letter, number, or comma, it's a wrapped sentence
+            if (/[a-zA-Z0-9,;]$/.test(line)) {
+                healedText += line + ' ';
+            } else {
+                healedText += line + '\n';
+            }
+        }
+        healedText = healedText.replace(/ +\n/g, '\n').replace(/\n{3,}/g, '\n\n');
+
+        return healedText.trim();
     } catch (err) {
         console.error('[OCR] Error:', err);
         throw new Error('Failed to parse PDF document: ' + err.message);
