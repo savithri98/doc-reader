@@ -29,13 +29,17 @@ export async function extractTextFromPdf(buffer) {
     try {
         const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
 
+        // CRITICAL: Disable the worker entirely so pdfjs runs inline in Node.js
+        // Without this it tries to spawn a web worker which doesn't exist server-side
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+
         const uint8Array = new Uint8Array(buffer);
         const loadingTask = pdfjsLib.getDocument({
             data: uint8Array,
-            // Disable workers in Node.js
             useWorkerFetch: false,
             isEvalSupported: false,
             useSystemFonts: true,
+            disableWorker: true,
         });
 
         const pdfDocument = await loadingTask.promise;
