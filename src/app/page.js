@@ -71,8 +71,15 @@ export default function Home() {
       });
 
       if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || "Failed to process translation.");
+        const textData = await response.text();
+        let errorMessage = "Failed to process translation.";
+        try {
+          const errData = JSON.parse(textData);
+          errorMessage = errData.error || errData.message || textData;
+        } catch {
+          errorMessage = textData;
+        }
+        throw new Error(errorMessage);
       }
 
       // Download the PDF stream
