@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { extractTextFromDocx, extractTextFromPdf } from '@/app/utils/extract';
 import { translateTextToEnglish } from '@/app/utils/translate';
+import { formatDocumentWithAI } from '@/app/utils/ai';
 import { generatePdfBuffer } from '@/app/utils/pdf';
 
 export async function POST(request) {
@@ -32,7 +33,10 @@ export async function POST(request) {
 
         if (!translatedText || translatedText.trim() === '') return NextResponse.json({ error: 'Translation resulted in empty text.' }, { status: 500 });
 
-        const pdfBuffer = await generatePdfBuffer(translatedText);
+        // ─── AI Semantic Formatting Step ─────────────────────────────────
+        const formattedMarkdownText = await formatDocumentWithAI(translatedText);
+
+        const pdfBuffer = await generatePdfBuffer(formattedMarkdownText);
 
         return new NextResponse(pdfBuffer, {
             status: 200,
