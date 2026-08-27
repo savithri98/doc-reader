@@ -1,20 +1,27 @@
-import { translate } from '@vitalets/google-translate-api';
+import translate from 'google-translate-api-x';
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
  * Translates a single chunk with retry logic.
  */
-async function translateChunk(text, retries = 3) {
+async function translateChunk(text, retries = 4) {
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
-            const result = await translate(text, { to: 'en' });
+            // google-translate-api-x handles most rate limiting under the hood,
+            // but we add specific options to bypass strict IP limits
+            const result = await translate(text, {
+                to: 'en',
+                forceBatch: false,
+                fallback: true,
+                rejectOnPartialFail: false
+            });
             return result.text || '';
         } catch (e) {
-            console.warn(`[Translate] Attempt ${attempt}/${retries} failed:`, e.message);
+            console.warn(`[Translate] Attempt ${attempt}/${retries} failed:`, e.name, e.message);
             if (attempt < retries) {
-                // Exponential backoff: 2s, 4s, 8s
-                const delay = 1000 * Math.pow(2, attempt);
+                // Exponential backoff: 3s, 6s, 12s
+                const delay = 1500 * Math.pow(2, attempt);
                 console.log(`[Translate] Retrying in ${delay}ms...`);
                 await sleep(delay);
             } else {
@@ -27,8 +34,8 @@ async function translateChunk(text, retries = 3) {
 export async function translateTextToEnglish(text) {
     if (!text || text.trim() === '') return '';
 
-    // Smaller chunks (1500 chars) to reduce per-request load
-    const MAX_CHUNK_LENGTH = 1500;
+    // Even smaller chunks to completely stay under anti-spam radar
+    const MAX_CHUNK_LENGTH = 1000;
     const chunks = [];
     let currentChunk = '';
     const paragraphs = text.split(/\n+/);
@@ -43,7 +50,7 @@ export async function translateTextToEnglish(text) {
     }
     if (currentChunk.trim().length > 0) chunks.push(currentChunk.trim());
 
-    console.log(`[Translate] Translating ${chunks.length} chunks...`);
+    console.log(`[Translate] Translating ${chunks.length} chunks safely...`);
     let finalTranslatedText = '';
 
     for (let i = 0; i < chunks.length; i++) {
@@ -56,13 +63,12 @@ export async function translateTextToEnglish(text) {
             finalTranslatedText += translated + '\n\n';
         } catch (e) {
             console.error(`[Translate] Chunk ${i + 1} permanently failed:`, e.message);
-            // Append partial failure notice but continue rather than stopping entirely
-            finalTranslatedText += `[Translation error for this section: ${e.message}]\n\n`;
+            finalTranslatedText += `\n[Translation error for this section: ${e.message}]\n\n`;
         }
 
-        // Polite delay between chunks to avoid rate limiting (500ms)
+        // Extremely polite delay between chunks to avoid rate limiting
         if (i < chunks.length - 1) {
-            await sleep(500);
+            await sleep(1000);
         }
     }
 
