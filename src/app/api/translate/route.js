@@ -18,8 +18,8 @@ export async function POST(request) {
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
-        if (buffer.length > 5 * 1024 * 1024) {
-            return NextResponse.json({ error: 'File is too large (over 5MB). Please upload a smaller document.' }, { status: 400 });
+        if (buffer.length > 20 * 1024 * 1024) {
+            return NextResponse.json({ error: 'File is too large (over 20MB). Please upload a smaller document.' }, { status: 400 });
         }
 
         let formattedMarkdownText = '';
