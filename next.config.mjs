@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ["mammoth", "pdfkit", "pdfjs-dist"],
+  serverExternalPackages: ["mammoth", "pdfkit", "unpdf"],
 };
 
 export default nextConfig;
