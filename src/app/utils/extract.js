@@ -92,7 +92,15 @@ export async function extractTextFromPdf(buffer) {
         }
 
         console.log(`[OCR] Done: ${pageNum} pages, ${fullText.length} chars`);
-        return fullText.trim();
+
+        // Remove standalone page numbers to avoid breaking paragraphs
+        const cleanedText = fullText.split('\n').filter(line => {
+            const trimmed = line.trim();
+            if (/^[\s\-\_]*(?:page|pg\.?)?\s*\d+\s*(?:of\s*\d+)?[\s\-\_]*$/i.test(trimmed)) return false;
+            return true;
+        }).join('\n');
+
+        return cleanedText.trim();
     } catch (err) {
         console.error('[OCR] Error:', err);
         throw new Error('Failed to parse PDF document: ' + err.message);
