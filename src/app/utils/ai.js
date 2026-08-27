@@ -41,7 +41,7 @@ ${rawText}
 """`;
 
     const response = await ai.models.generateContent({
-        model: 'gemini-3.5-flash',
+        model: 'gemini-2.5-flash',
         contents: textPrompt,
     });
 
@@ -90,7 +90,7 @@ export async function translateAndFormatPdfBuffer(pdfBuffer) {
 
         console.log('[AI] Generating translation...');
         const response = await ai.models.generateContent({
-            model: 'gemini-3.5-flash',
+            model: 'gemini-2.5-flash',
             contents: [
                 { fileData: { mimeType: 'application/pdf', fileUri: file.uri } },
                 PROMPT
