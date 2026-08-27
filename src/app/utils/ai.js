@@ -1,42 +1,44 @@
 import { GoogleGenAI } from '@google/genai';
 
-export async function formatDocumentWithAI(text) {
+export async function translateAndFormatWithAI(rawText) {
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return text; // Silently fallback to raw if no API key is provided
+    if (!apiKey) throw new Error("A Gemini API Key is required in .env.local to perform High-Quality Translation & Formatting.");
 
-    console.log('[AI] Formatting document structure with Gemini 1.5 Flash...');
+    console.log('[AI] Translating and formatting document with Gemini 1.5 Pro...');
 
     try {
         const ai = new GoogleGenAI({ apiKey });
         const prompt = `
-You are a highly intelligent professional document formatter. I will provide you with a long block of translated text extracted via OCR from a PDF. Sentences and formatting are messy.
-Your task is to completely reconstruct the original semantic structure of the document using standard Markdown formatting.
+You are an expert bilingual Translator and professional Document Formatter. 
+I am providing you with text extracted from a document (which might be in Kannada, Hindi, or English) via OCR. The text may have messy sentence boundaries.
 
-Follow these strict rules:
-1. Identify the Main Document Title and mark it with # (H1)
-2. Identify Section Headings and mark them with ## (H2)
-3. Identify Subheadings and mark them with ### (H3)
-4. Reconstruct any bullet points or numbered lists and format them cleanly as Markdown lists (using - or 1.)
-5. Group regular prose into clean, highly readable paragraphs separated by a single blank line.
-6. Fix any obvious sentence fragments that were broken by random line breaks.
-7. Do NOT change the meaning or words of the translation, only repair grammar, structure and formatting.
-8. Output STRICTLY the Markdown text and nothing else. No introductory/concluding chat.
+Your task is to:
+1. Accurately and fluently translate the ENTIRE text into highly professional English.
+2. Carefully analyze the context and semantic structure of the document to powerfully recreate its layout.
+3. Use standard Markdown to format the output:
+   - Mark the Main Document Title with # (H1)
+   - Mark Major Section Headings with ## (H2)
+   - Mark Subheadings with ### (H3)
+   - **Crucially:** Ensure that paragraphs logically follow and belong under their respective headings.
+   - Reconstruct list items clearly using Markdown bullets (-) or numbering (1., 2.).
+4. Automatically correct any OCR spelling misinterpretations based on context.
+5. Provide ONLY the final translated Markdown output. Do not output anything else.
 
-Text to format:
+Raw Extracted Text:
 """
-${text}
+${rawText}
 """
 `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-1.5-flash',
+            model: 'gemini-1.5-pro',
             contents: prompt,
         });
 
-        console.log('[AI] Formatting complete.');
+        console.log('[AI] Translation and Formatting complete.');
         return response.text.trim();
     } catch (e) {
-        console.error("[AI] Semantic Formatting failed:", e.message);
-        return text; // Fallback to raw text if AI fails
+        console.error("[AI] Semantic Pipeline failed:", e.message);
+        throw new Error("AI Processing Failed: " + e.message);
     }
 }

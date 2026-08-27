@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { extractTextFromDocx, extractTextFromPdf } from '@/app/utils/extract';
-import { translateTextToEnglish } from '@/app/utils/translate';
-import { formatDocumentWithAI } from '@/app/utils/ai';
+import { translateAndFormatWithAI } from '@/app/utils/ai';
 import { generatePdfBuffer } from '@/app/utils/pdf';
 
 export async function POST(request) {
@@ -29,12 +28,10 @@ export async function POST(request) {
 
         if (extractedText.length > 50000) return NextResponse.json({ error: 'File is too large to translate in free tier.' }, { status: 400 });
 
-        const translatedText = await translateTextToEnglish(extractedText);
-
-        if (!translatedText || translatedText.trim() === '') return NextResponse.json({ error: 'Translation resulted in empty text.' }, { status: 500 });
-
-        // ─── AI Semantic Formatting Step ─────────────────────────────────
-        const formattedMarkdownText = await formatDocumentWithAI(translatedText);
+        // ─── Native AI Translation & Semantic Formatting Step ──────────
+        // This leverages Gemini 1.5 Pro to intelligently translate the entire text
+        // while simultaneously rebuilding perfect markdown layout.
+        const formattedMarkdownText = await translateAndFormatWithAI(extractedText);
 
         const pdfBuffer = await generatePdfBuffer(formattedMarkdownText);
 
