@@ -1,5 +1,8 @@
 import mammoth from 'mammoth';
 import Tesseract from 'tesseract.js';
+import { writeFile, unlink } from 'fs/promises';
+import { tmpdir } from 'os';
+import { join } from 'path';
 
 export async function extractTextFromDocx(buffer) {
     try {
@@ -21,40 +24,47 @@ export async function extractTextFromPdf(buffer) {
         textFromLayer = Array.isArray(result.text)
             ? result.text.join('\n')
             : (result.text || '');
-        console.log(`[PDF] Text layer extraction: ${textFromLayer.length} characters`);
+        console.log(`[PDF] Text layer: ${textFromLayer.trim().length} chars`);
     } catch (e) {
-        console.warn('[PDF] Text layer extraction failed, will try OCR:', e.message);
+        console.warn('[PDF] Text layer extraction failed:', e.message);
     }
 
-    // If we got meaningful text (>20 chars) from text layer, use it
     if (textFromLayer && textFromLayer.trim().length > 20) {
         return textFromLayer.trim();
     }
 
-    // Step 2: PDF is scanned (image-based). Use pdf-to-img + Tesseract OCR
-    console.log('[PDF] No text layer found. Running OCR pipeline...');
+    // Step 2: OCR pipeline for scanned/image-based PDFs
+    console.log('[PDF] No text layer. Running Tesseract OCR...');
+    const tmpPath = join(tmpdir(), `ocr_input_${Date.now()}.pdf`);
     try {
-        const { pdfToPng } = await import('pdf-to-img');
+        // Write buffer to a temp file (pdf-to-img requires a file path)
+        await writeFile(tmpPath, buffer);
+
+        const { pdf } = await import('pdf-to-img');
+        const doc = await pdf(tmpPath, { scale: 2 });
+
         let fullText = '';
         let pageNum = 0;
 
-        for await (const pageImage of pdfToPng(buffer)) {
+        for await (const pageImage of doc) {
             pageNum++;
-            console.log(`[OCR] Processing page ${pageNum}...`);
+            console.log(`[OCR] Page ${pageNum}...`);
             const { data: { text } } = await Tesseract.recognize(
                 pageImage,
-                'kan+hin+eng', // Kannada + Hindi + English language detection
+                'kan+hin+eng',
                 { logger: () => { } }
             );
             fullText += text + '\n';
-            // Limit to 10 pages to avoid timeout
-            if (pageNum >= 10) break;
+            if (pageNum >= 10) break; // Max 10 pages
         }
 
-        console.log(`[OCR] Done. Total pages: ${pageNum}. Chars: ${fullText.length}`);
+        console.log(`[OCR] Done: ${pageNum} pages, ${fullText.length} chars`);
         return fullText.trim();
     } catch (err) {
         console.error('[OCR] Error:', err);
         throw new Error('Failed to parse PDF document: ' + err.message);
+    } finally {
+        // Clean up temp file
+        try { await unlink(tmpPath); } catch (_) { }
     }
 }
