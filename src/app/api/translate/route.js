@@ -33,11 +33,15 @@ export async function POST(request) {
 
         const pdfBuffer = await generatePdfBuffer(formattedMarkdownText);
 
+        // HTTP Headers only support Latin-1 (ASCII). Unicode filenames (like Kannada) will crash Next.js
+        // We use the universally safe filename*=UTF-8'' encoding for the exact filename.
+        const safeFilename = encodeURIComponent(`translated_${name.replace(/\.[^/.]+$/, "")}.pdf`);
+
         return new NextResponse(pdfBuffer, {
             status: 200,
             headers: {
                 'Content-Type': 'application/pdf',
-                'Content-Disposition': `attachment; filename="translated_${name.replace(/\.[^/.]+$/, "")}.pdf"`,
+                'Content-Disposition': `attachment; filename="translated_document.pdf"; filename*=UTF-8''${safeFilename}`,
             },
         });
     } catch (error) {
