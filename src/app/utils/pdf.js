@@ -24,6 +24,17 @@ export async function generatePdfBuffer(markdownText) {
 
             const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
 
+            // ─── Sanitize Markdown ─────────────────────────────────────────────
+            // PDFKit standard fonts (Helvetica) strictly require Latin1 (ByteString) < 255.
+            // If AI includes regional glyphs (Kannada/Hindi) or smart quotes, it crashes instantly.
+            const sanitizedText = markdownText
+                .replace(/[\u2018\u2019]/g, "'") // Smart single quotes
+                .replace(/[\u201C\u201D]/g, '"') // Smart double quotes
+                .replace(/[\u2013\u2014]/g, '-') // Dashes
+                .replace(/[\u2026]/g, '...')     // Ellipsis
+                .replace(/[^\x00-\xFF]/g, '')    // Strip all remaining unsupported Non-Latin chars
+                .replace(/  +/g, ' ');           // Clean up accidental double spaces from stripping
+
             // ─── Header ───────────────────────────────────────────────
             doc.font('Helvetica-Bold')
                 .fontSize(20)
@@ -37,7 +48,7 @@ export async function generatePdfBuffer(markdownText) {
             doc.moveDown(1.2);
 
             // ─── Parse Markdown Line by Line ───────────────────────────────────
-            const lines = markdownText.split('\n');
+            const lines = sanitizedText.split('\n');
 
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i].trim();
