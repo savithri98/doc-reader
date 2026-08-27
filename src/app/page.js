@@ -44,8 +44,15 @@ export default function Home() {
     } else {
       setFile(null);
       setStatus("error");
-      setErrorMsg("Please upload a valid PDF or Word (.docx) document.");
+      setErrorMsg("Please upload a valid PDF or Word document.");
     }
+  };
+
+  const removeFile = (e) => {
+    e.stopPropagation();
+    setFile(null);
+    setStatus("idle");
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleProcess = async () => {
@@ -88,91 +95,99 @@ export default function Home() {
   };
 
   return (
-    <main className="container">
-      <div className="glass-panel">
-        <h1>Document Translator</h1>
-        <p className="subtitle">
-          Seamlessly translate Kannada or Hindi text from your Word & PDF documents into English. Experience flawless meaning retention and instant downloading.
-        </p>
+    <>
+      <div className="ambient-glow-1"></div>
+      <div className="ambient-glow-2"></div>
 
-        <div
-          className={`upload-zone ${dragActive ? "drag-active" : ""}`}
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current.click()}
-        >
-          <div className="upload-content">
-            <svg className="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-            </svg>
-            <p style={{ fontSize: "1.1rem", fontWeight: "500", marginBottom: "0.5rem" }}>
-              Drag & Drop your document here
-            </p>
-            <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
-              or click to browse from your computer
-            </p>
-            <p style={{ color: "var(--text-muted)", fontSize: "0.8rem", marginTop: "8px" }}>
-              Supports .pdf and .docx
-            </p>
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            style={{ display: "none" }}
-            onChange={handleChange}
-          />
-        </div>
+      <main className="app-container">
+        <div className="glass-panel">
 
-        {file && (
-          <div className="file-info">
-            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            {file.name}
-          </div>
-        )}
+          <header className="header">
+            <h1>Document Translator</h1>
+            <p>Seamlessly translate Kannada or Hindi text from your Word & PDF documents into English. Experience flawless meaning retention and instant outputs.</p>
+          </header>
 
-        <div style={{ marginTop: "2.5rem" }}>
-          <button
-            className="primary-btn"
-            onClick={handleProcess}
-            disabled={!file || status === "processing"}
+          <div
+            className={`dropzone ${dragActive ? "active" : ""}`}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
           >
-            {status === "processing" ? "Translating & Generating PDF..." : "Convert to English PDF"}
-          </button>
+            <div className="dropzone-content">
+              <div className="icon-wrapper">
+                <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                </svg>
+              </div>
+              <h3>Drag & Drop your document here</h3>
+              <p>Supports .pdf and .docx formats</p>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              style={{ display: "none" }}
+              onChange={handleChange}
+            />
+          </div>
+
+          {file && (
+            <div className="file-view">
+              <div className="file-name">
+                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                </svg>
+                {file.name}
+              </div>
+              <button className="remove-btn" onClick={removeFile} aria-label="Remove file">
+                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
+
+          <div className="action-area">
+            {status === "error" && (
+              <div className="status error">
+                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            {status === "success" && (
+              <div className="status success">
+                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Perfectly translated! Your PDF is downloading.</span>
+              </div>
+            )}
+
+            {status === "processing" ? (
+              <div className="status processing">
+                <svg className="spinner" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                </svg>
+                <span>Engine analyzing and securely translating text...</span>
+              </div>
+            ) : (
+              <button
+                className="btn-process"
+                onClick={handleProcess}
+                disabled={!file}
+              >
+                Translate & Generate Output
+              </button>
+            )}
+          </div>
+
         </div>
-
-        {status === "processing" && (
-          <div className="status-indicator status-processing">
-            <svg className="spinner" width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Processing your document... This may take a moment.
-          </div>
-        )}
-
-        {status === "success" && (
-          <div className="status-indicator status-success">
-            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Successfully generated and downloaded your translated PDF!
-          </div>
-        )}
-
-        {status === "error" && (
-          <div className="status-indicator status-error">
-            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {errorMsg}
-          </div>
-        )}
-
-      </div>
-    </main>
+      </main>
+    </>
   );
 }
