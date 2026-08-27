@@ -22,7 +22,7 @@ ${rawText}
 """`;
 
     const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
+        model: 'gemini-3.5-flash',
         contents: prompt,
     });
 
@@ -65,7 +65,7 @@ Your task is to:
 `;
 
     const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
+        model: 'gemini-3.5-flash',
         contents: [documentPart, prompt]
     });
 
