@@ -1,5 +1,4 @@
 import mammoth from 'mammoth';
-// pdf-parse loaded dynamically
 
 export async function extractTextFromDocx(buffer) {
     try {
@@ -13,15 +12,22 @@ export async function extractTextFromDocx(buffer) {
 
 export async function extractTextFromPdf(buffer) {
     try {
-        if (typeof globalThis.DOMMatrix === 'undefined') {
-            globalThis.DOMMatrix = class DOMMatrix { };
+        // Use pdfjs-dist legacy build which works properly in Node.js
+        const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
+
+        const uint8Array = new Uint8Array(buffer);
+        const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
+        const pdfDocument = await loadingTask.promise;
+
+        let fullText = '';
+        for (let i = 1; i <= pdfDocument.numPages; i++) {
+            const page = await pdfDocument.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map(item => item.str).join(' ');
+            fullText += pageText + '\n';
         }
-        if (typeof globalThis.Path2D === 'undefined') {
-            globalThis.Path2D = class Path2D { };
-        }
-        const pdfParse = require('pdf-parse');
-        const result = await pdfParse(buffer);
-        return result.text || '';
+
+        return fullText.trim();
     } catch (error) {
         console.error('Error extracting text from PDF:', error);
         throw new Error('Failed to parse PDF document: ' + error.message);
