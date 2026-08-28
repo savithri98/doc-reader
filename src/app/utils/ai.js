@@ -6,7 +6,7 @@ import { join } from 'path';
 
 const PROMPT = `
 You are an expert bilingual Translator and professional Document Formatter.
-Please read this PDF document (which may contain Kannada, Hindi, or English text).
+Please read this document/image (which may contain Kannada, Hindi, or English text).
 
 Your task is to:
 1. Accurately and fluently translate the ENTIRE document into highly professional English.
@@ -50,27 +50,27 @@ ${rawText}
 }
 
 /**
- * Uploads the PDF via File API and then translates it with Gemini.
+ * Uploads the Document/Image via File API and then translates it with Gemini.
  * Using File API avoids the inline base64 size limits that cause 5-minute timeouts.
  */
-export async function translateAndFormatPdfBuffer(pdfBuffer) {
+export async function translateAndFormatVisionBuffer(buffer, mimeType = 'application/pdf', extension = '.pdf') {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error("A Gemini API Key is required in .env.local.");
 
-    console.log(`[AI] PDF size: ${(pdfBuffer.length / 1024).toFixed(1)} KB`);
+    console.log(`[AI] Processing Vision File (${mimeType}) size: ${(buffer.length / 1024).toFixed(1)} KB`);
     const ai = new GoogleGenAI({ apiKey });
 
     // Write buffer to a temp file for upload
-    const tmpPath = join(tmpdir(), `gemini_upload_${Date.now()}.pdf`);
+    const tmpPath = join(tmpdir(), `gemini_upload_${Date.now()}${extension}`);
     let uploadedFile;
 
     try {
-        await writeFile(tmpPath, pdfBuffer);
+        await writeFile(tmpPath, buffer);
 
-        console.log('[AI] Uploading PDF via File API...');
+        console.log('[AI] Uploading Vision file via File API...');
         uploadedFile = await ai.files.upload({
             file: tmpPath,
-            config: { mimeType: 'application/pdf' }
+            config: { mimeType }
         });
         console.log(`[AI] Upload complete: ${uploadedFile.name}`);
 
@@ -92,12 +92,12 @@ export async function translateAndFormatPdfBuffer(pdfBuffer) {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: [
-                { fileData: { mimeType: 'application/pdf', fileUri: file.uri } },
+                { fileData: { mimeType, fileUri: file.uri } },
                 PROMPT
             ]
         });
 
-        console.log('[AI] PDF Processing complete.');
+        console.log('[AI] Vision Processing complete.');
         return response.text.trim();
 
     } finally {

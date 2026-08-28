@@ -39,12 +39,12 @@ export default function Home() {
     setErrorMsg("");
     setStatus("idle");
     const name = uploadedFile.name.toLowerCase();
-    if (name.endsWith(".pdf") || name.endsWith(".docx")) {
+    if (name.endsWith(".pdf") || name.endsWith(".docx") || name.match(/\.(jpg|jpeg|png)$/)) {
       setFile(uploadedFile);
     } else {
       setFile(null);
       setStatus("error");
-      setErrorMsg("Please upload a valid PDF or Word document.");
+      setErrorMsg("Please upload a valid PDF, Word document, or Image (JPG/PNG).");
     }
   };
 
@@ -111,7 +111,7 @@ export default function Home() {
 
           <header className="header">
             <h1>Document Translator</h1>
-            <p>Seamlessly translate Kannada or Hindi text from your Word & PDF documents into English. Experience flawless meaning retention and instant outputs.</p>
+            <p>Seamlessly translate Kannada or Hindi text from your Word, PDF, or Image documents into English. Experience flawless meaning retention and instant outputs.</p>
           </header>
 
           <div
@@ -129,12 +129,12 @@ export default function Home() {
                 </svg>
               </div>
               <h3>Drag & Drop your document here</h3>
-              <p>Supports .pdf and .docx formats</p>
+              <p>Supports .pdf, .docx, .jpg, .png</p>
             </div>
             <input
               ref={fileInputRef}
               type="file"
-              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              accept=".pdf,.docx,.jpg,.jpeg,.png,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png"
               style={{ display: "none" }}
               onChange={handleChange}
             />

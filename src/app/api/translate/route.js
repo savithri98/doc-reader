@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { translateAndFormatPdfBuffer, processDocxBuffer } from '@/app/utils/ai';
+import { translateAndFormatVisionBuffer, processDocxBuffer } from '@/app/utils/ai';
 import { generatePdfBuffer } from '@/app/utils/pdf';
 
 // Allow up to 5 minutes for large Gemini processing jobs
@@ -23,13 +23,16 @@ export async function POST(request) {
         }
 
         let formattedMarkdownText = '';
+        let extension = name.substring(name.lastIndexOf('.'));
+        const lName = name.toLowerCase();
 
-        if (name.toLowerCase().endsWith('.pdf') || type === 'application/pdf') {
-            formattedMarkdownText = await translateAndFormatPdfBuffer(buffer);
-        } else if (name.toLowerCase().endsWith('.docx') || type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        if (lName.match(/\.(pdf|jpg|jpeg|png)$/) || type.startsWith('image/') || type === 'application/pdf') {
+            const finalMime = type || (lName.endsWith('.pdf') ? 'application/pdf' : (lName.endsWith('.png') ? 'image/png' : 'image/jpeg'));
+            formattedMarkdownText = await translateAndFormatVisionBuffer(buffer, finalMime, extension);
+        } else if (lName.endsWith('.docx') || type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
             formattedMarkdownText = await processDocxBuffer(buffer);
         } else {
-            return NextResponse.json({ error: 'Unsupported file format. Please upload PDF or DOCX.' }, { status: 400 });
+            return NextResponse.json({ error: 'Unsupported file format. Please upload PDF, DOCX, JPG, or PNG.' }, { status: 400 });
         }
 
         if (!formattedMarkdownText || formattedMarkdownText.trim() === '') {
